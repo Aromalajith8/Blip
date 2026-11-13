@@ -68,7 +68,6 @@ h1 {
   display: none !important;
 }
 
-/* Monochrome Tactical Map Callsign Labels */
 .blip-tooltip {
   background: #0c0c0c !important;
   color: #ffffff !important;
@@ -161,6 +160,23 @@ input:disabled, select:disabled {
   opacity: 0.65;
   color: #aaaaaa;
   cursor: not-allowed;
+}
+
+.identity-box {
+  background: #111111;
+  border: 1px solid #242424;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.identity-box input {
+  margin-bottom: 0;
+  background: #0a0a0a;
+}
+
+.action-section {
+  margin-bottom: 4px;
 }
 
 /* Buttons */
@@ -312,7 +328,7 @@ button:active {
   background: #111111;
   border: 1px solid #222222;
   border-radius: 6px;
-  max-height: 130px;
+  max-height: 120px;
   overflow-y: auto;
 }
 
@@ -354,6 +370,20 @@ button:active {
   padding: 9px 10px;
   font-size: 0.85rem;
   margin-bottom: 0;
+}
+
+.combo-input {
+  display: flex;
+  gap: 4px;
+}
+
+.combo-input input {
+  width: 52%;
+}
+
+.combo-input select {
+  width: 48%;
+  padding: 9px 6px;
 }
 
 .full-width {
@@ -423,7 +453,6 @@ button:active {
   font-variant-numeric: tabular-nums;
 }
 
-/* Blip Reveal Countdown / Alert Strip */
 .blip-banner {
   background: rgba(16, 16, 16, 0.9);
   border-bottom: 1px solid #242424;
@@ -439,6 +468,17 @@ button:active {
   background: #ffffff;
   color: #000000;
   border-bottom-color: #ffffff;
+}
+
+.oob-banner {
+  background: #2a0a0a;
+  color: #ff6b6b;
+  border-bottom: 1px solid #5c1919;
+  padding: 7px 14px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
 }
 
 /* Lockout / Caught Full-Screen Overlay */
@@ -523,21 +563,4 @@ button:active {
   font-size: 0.72rem;
   letter-spacing: 1px;
   color: #888888;
-}
-/* Home Screen Visual Separation */
-.identity-box {
-  background: #111111;
-  border: 1px solid #242424;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 18px;
-}
-
-.identity-box input {
-  margin-bottom: 0;
-  background: #0a0a0a;
-}
-
-.action-section {
-  margin-bottom: 4px;
 }
