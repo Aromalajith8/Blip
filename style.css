@@ -68,6 +68,23 @@ h1 {
   display: none !important;
 }
 
+/* Monochrome Tactical Map Callsign Labels */
+.blip-tooltip {
+  background: #0c0c0c !important;
+  color: #ffffff !important;
+  border: 1px solid #444444 !important;
+  border-radius: 4px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  padding: 2px 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+}
+
+.blip-tooltip::before {
+  display: none !important;
+}
+
 /* Overlays & Cards */
 .panel-overlay {
   position: relative;
@@ -404,6 +421,24 @@ button:active {
   letter-spacing: 2px;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
+}
+
+/* Blip Reveal Countdown / Alert Strip */
+.blip-banner {
+  background: rgba(16, 16, 16, 0.9);
+  border-bottom: 1px solid #242424;
+  padding: 6px 14px;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: #999999;
+}
+
+.blip-banner.active-ping {
+  background: #ffffff;
+  color: #000000;
+  border-bottom-color: #ffffff;
 }
 
 /* Lockout / Caught Full-Screen Overlay */
