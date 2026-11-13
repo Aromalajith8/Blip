@@ -201,7 +201,6 @@ function playCaptureBroadcastChime() {
     navigator.vibrate([180, 90, 250]);
   }
 }
-
 // 8. Create Room (Host)
 document.getElementById("create-room-btn").addEventListener("click", async () => {
   const name = playerNameInput.value.trim().toUpperCase();
@@ -210,44 +209,54 @@ document.getElementById("create-room-btn").addEventListener("click", async () =>
     return;
   }
 
+  if (statusText.textContent !== "ONLINE") {
+    homeError.textContent = "SERVER NOT CONNECTED YET — CHECK INTERNET OR WAIT 3S.";
+    return;
+  }
+
   homeError.textContent = "CREATING ROOM...";
-  unlockAndPlayTwoSecondAlarm();
+  try {
+    unlockAndPlayTwoSecondAlarm();
+  } catch (_) {}
 
   const code = Math.floor(1000 + Math.random() * 9000).toString();
   isHost = true;
   currentRoomCode = code;
   roomRef = db.ref(`rooms/${code}`);
 
-  await roomRef.set({
-    hostId: myPlayerId,
-    status: "lobby",
-    createdAt: firebase.database.ServerValue.TIMESTAMP,
-    settings: {
-      finderCount: 1,
-      zoneRadiusMeters: 150,
-      headStartSec: 40,
-      matchDurationMin: 10,
-      captureRadiusMeters: 12,
-      captureHoldSec: 10,
-      alarmIntervalVal: 2,
-      alarmIntervalUnit: "min",
-      blipMapReveal: "on",
-      targetCaptures: 1
-    },
-    players: {
-      [myPlayerId]: {
-        name: name,
-        role: "unassigned",
-        status: "ready",
-        audioReady: true
+  try {
+    await roomRef.set({
+      hostId: myPlayerId,
+      status: "lobby",
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      settings: {
+        finderCount: 1,
+        zoneRadiusMeters: 150,
+        headStartSec: 40,
+        matchDurationMin: 10,
+        captureRadiusMeters: 12,
+        captureHoldSec: 10,
+        alarmIntervalVal: 2,
+        alarmIntervalUnit: "min",
+        blipMapReveal: "on",
+        targetCaptures: 1
+      },
+      players: {
+        [myPlayerId]: {
+          name: name,
+          role: "unassigned",
+          status: "ready",
+          audioReady: true
+        }
       }
-    }
-  });
+    });
 
-  roomRef.child(`players/${myPlayerId}`).onDisconnect().remove();
-  enterLobby(code);
+    roomRef.child(`players/${myPlayerId}`).onDisconnect().remove();
+    enterLobby(code);
+  } catch (err) {
+    homeError.textContent = "DB ERROR: " + err.message.toUpperCase();
+  }
 });
-
 // 9. Join Room
 document.getElementById("join-room-btn").addEventListener("click", async () => {
   const name = playerNameInput.value.trim().toUpperCase();
