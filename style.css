@@ -10,7 +10,7 @@ body {
   color: #e6edf3;
   display: flex;
   flex-direction: column;
-  height: 100dvh; /* Fits mobile screens cleanly without address-bar cutoff */
+  height: 100dvh;
 }
 
 header {
@@ -48,6 +48,11 @@ h1 {
   background: #0b0f14;
 }
 
+/* Turns standard OpenStreetMap tiles into a dark radar map */
+.leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(95%);
+}
+
 footer {
   padding: 14px 16px;
   background: #111822;
@@ -68,7 +73,4 @@ button {
 
 button:active {
   opacity: 0.85;
-}
-.leaflet-layer {
-  filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(95%);
 }
