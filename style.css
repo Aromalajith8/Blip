@@ -12,19 +12,21 @@ body {
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  overflow: hidden;
 }
 
 header {
-  padding: 16px 20px;
+  padding: 14px 20px;
   background: #0a0a0a;
   border-bottom: 1px solid #1f1f1f;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  z-index: 20;
 }
 
 h1 {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 4px;
   color: #ffffff;
@@ -44,66 +46,297 @@ h1 {
 }
 
 #status-text {
-  font-size: 0.8rem;
-  font-weight: 500;
-  letter-spacing: 0.3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   color: #777777;
 }
 
 #map {
-  flex: 1;
-  width: 100%;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
   background: #000000;
 }
 
-/* Pure grayscale black & slate-grey map look */
 .leaflet-tile-pane {
-  filter: grayscale(100%) invert(100%) contrast(108%) brightness(82%);
+  filter: grayscale(100%) invert(100%) contrast(108%) brightness(75%);
 }
 
-/* Minimal dark zoom controls */
-.leaflet-control-zoom a {
-  background-color: #111111 !important;
-  color: #e5e5e5 !important;
-  border-color: #242424 !important;
-}
-
+.leaflet-control-zoom,
 .leaflet-control-attribution {
-  background: rgba(10, 10, 10, 0.75) !important;
-  color: #555555 !important;
-  font-size: 10px !important;
+  display: none !important;
 }
 
-.leaflet-control-attribution a {
-  color: #777777 !important;
+/* Overlays & Cards */
+.panel-overlay {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  overflow-y: auto;
 }
 
-footer {
-  padding: 16px 20px;
-  background: #0a0a0a;
-  border-top: 1px solid #1f1f1f;
+.hidden {
+  display: none !important;
 }
 
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: #0c0c0c;
+  border: 1px solid #222222;
+  border-radius: 10px;
+  padding: 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+}
+
+.lobby-card {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: #777777;
+  margin-bottom: 4px;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  color: #888888;
+  margin-bottom: 6px;
+}
+
+input, select {
+  width: 100%;
+  padding: 12px 14px;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  outline: none;
+  margin-bottom: 14px;
+}
+
+input:focus, select:focus {
+  border-color: #777777;
+}
+
+input:disabled, select:disabled {
+  opacity: 0.65;
+  color: #aaaaaa;
+  cursor: not-allowed;
+}
+
+/* Buttons */
 button {
   width: 100%;
-  padding: 15px;
-  font-size: 0.9rem;
+  padding: 14px;
+  font-size: 0.82rem;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: #000000;
-  background: #f2f2f2;
-  border: 1px solid #ffffff;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease;
-}
-
-button:hover {
-  background: #d9d9d9;
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
 button:active {
   transform: scale(0.99);
-  background: #bfbfbf;
+}
+
+.btn-primary {
+  background: #f2f2f2;
+  color: #000000;
+  border: 1px solid #ffffff;
+}
+
+.btn-secondary {
+  background: #181818;
+  color: #e5e5e5;
+  border: 1px solid #333333;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #777777;
+  border: none;
+  margin-top: 8px;
+  padding: 10px;
+  font-size: 0.75rem;
+}
+
+.btn-small {
+  width: auto;
+  padding: 8px 14px;
+  font-size: 0.72rem;
+  background: #181818;
+  color: #e5e5e5;
+  border: 1px solid #333333;
+}
+
+.divider {
+  text-align: center;
+  margin: 18px 0;
+  position: relative;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: #1f1f1f;
+}
+
+.divider span {
+  position: relative;
+  background: #0c0c0c;
+  padding: 0 10px;
+  font-size: 0.68rem;
+  letter-spacing: 1.5px;
+  color: #666666;
+}
+
+.join-row {
+  display: flex;
+  gap: 8px;
+}
+
+.join-row input {
+  margin-bottom: 0;
+  text-align: center;
+  letter-spacing: 3px;
+  font-weight: 700;
+}
+
+.join-row button {
+  width: 38%;
+}
+
+.error-msg {
+  color: #ff5c5c;
+  font-size: 0.78rem;
+  margin-top: 10px;
+  min-height: 18px;
+}
+
+/* Lobby Layout */
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #1f1f1f;
+  margin-bottom: 16px;
+}
+
+.code-display {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #ffffff;
+}
+
+.section-block {
+  margin-bottom: 16px;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  color: #888888;
+  margin-bottom: 8px;
+}
+
+.tag {
+  background: #1a1a1a;
+  border: 1px solid #2e2e2e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #cccccc;
+  font-size: 0.65rem;
+}
+
+.player-list {
+  list-style: none;
+  background: #111111;
+  border: 1px solid #222222;
+  border-radius: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.player-list li {
+  padding: 10px 12px;
+  border-bottom: 1px solid #1b1b1b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+.player-list li:last-child {
+  border-bottom: none;
+}
+
+.player-meta {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: #888888;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.setting-item label {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  color: #777777;
+  margin-bottom: 4px;
+}
+
+.setting-item input,
+.setting-item select {
+  padding: 9px 10px;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.hint-text {
+  font-size: 0.72rem;
+  color: #777777;
+  text-align: center;
+  margin: 8px 0 14px;
 }
