@@ -20,7 +20,7 @@ const locateBtn = document.getElementById("locate-btn");
 const map = L.map("map").setView([20.5937, 78.9629], 5);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "© OpenStreetMap contributors",
+  attribution: "© OpenStreetMap",
   maxZoom: 19
 }).addTo(map);
 
@@ -29,10 +29,11 @@ let playerMarker = null;
 // 4. Test Firebase Connection
 db.ref(".info/connected").on("value", (snap) => {
   if (snap.val() === true) {
-    statusText.textContent = "Server Connected ✅";
-    statusText.style.color = "#00ff9d";
+    statusText.textContent = "ONLINE";
+    statusText.style.color = "#e5e5e5";
   } else {
-    statusText.textContent = "Connecting to server...";
+    statusText.textContent = "CONNECTING...";
+    statusText.style.color = "#666666";
   }
 });
 
@@ -43,7 +44,7 @@ locateBtn.addEventListener("click", () => {
     return;
   }
 
-  locateBtn.textContent = "Locating...";
+  locateBtn.textContent = "ACQUIRING SIGNAL...";
 
   navigator.geolocation.watchPosition(
     (position) => {
@@ -51,15 +52,17 @@ locateBtn.addEventListener("click", () => {
       const lng = position.coords.longitude;
       const accuracy = Math.round(position.coords.accuracy);
 
-      statusText.textContent = `GPS Locked (±${accuracy}m)`;
-      locateBtn.textContent = "Live GPS Active";
+      statusText.textContent = `GPS ±${accuracy}M`;
+      statusText.style.color = "#ffffff";
+      locateBtn.textContent = "SIGNAL LOCKED";
 
       if (!playerMarker) {
         playerMarker = L.circleMarker([lat, lng], {
-          radius: 10,
-          color: "#00ff9d",
-          fillColor: "#00ff9d",
-          fillOpacity: 0.8
+          radius: 8,
+          color: "#ffffff",
+          weight: 2,
+          fillColor: "#ffffff",
+          fillOpacity: 0.95
         }).addTo(map);
         map.setView([lat, lng], 17);
       } else {
@@ -74,8 +77,9 @@ locateBtn.addEventListener("click", () => {
       });
     },
     (error) => {
-      statusText.textContent = "GPS Error: " + error.message;
-      statusText.style.color = "#ff4d4d";
+      statusText.textContent = "GPS ERROR";
+      statusText.style.color = "#ff5555";
+      locateBtn.textContent = "RETRY GPS";
     },
     {
       enableHighAccuracy: true,
