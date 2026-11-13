@@ -10,7 +10,7 @@
 <body>
   <header>
     <div>
-      <h1>BLIP <span class="badge">v0.4</span></h1>
+      <h1>BLIP <span class="badge">v0.5</span></h1>
     </div>
     <p id="status-text">CONNECTING...</p>
   </header>
@@ -24,13 +24,11 @@
       <p class="eyebrow">REAL-WORLD RADAR TAG</p>
       <h2>ENTER THE FIELD</h2>
 
-      <!-- Step 1: Universal Player Identity -->
       <div class="identity-box">
         <label class="field-label" for="player-name">YOUR CALLSIGN (REQUIRED FOR ALL PLAYERS)</label>
         <input type="text" id="player-name" maxlength="16" placeholder="e.g. alpha,charlie,.." autocomplete="off" />
       </div>
 
-      <!-- Option A: Join Existing Room -->
       <div class="action-section">
         <label class="field-label" for="room-code-input">JOIN EXISTING MATCH</label>
         <div class="join-row">
@@ -41,7 +39,6 @@
 
       <div class="divider"><span>OR START YOUR OWN</span></div>
 
-      <!-- Option B: Create Host Room -->
       <div class="action-section">
         <button id="create-room-btn" class="btn-secondary">CREATE MATCH (HOST)</button>
       </div>
@@ -88,6 +85,11 @@
           </div>
 
           <div class="setting-item">
+            <label for="set-zone">PLAY ZONE (M) · 0=OFF</label>
+            <input type="number" id="set-zone" class="host-control" min="0" max="5000" step="10" value="150" />
+          </div>
+
+          <div class="setting-item">
             <label for="set-headstart">HIDE TIME (SEC)</label>
             <input type="number" id="set-headstart" class="host-control" min="5" max="300" value="40" />
           </div>
@@ -108,8 +110,22 @@
           </div>
 
           <div class="setting-item">
-            <label for="set-alarm">BLIP EVERY (MIN)</label>
-            <input type="number" id="set-alarm" class="host-control" min="1" max="15" value="2" />
+            <label for="set-alarm-val">BLIP INTERVAL</label>
+            <div class="combo-input">
+              <input type="number" id="set-alarm-val" class="host-control" min="1" max="60" value="2" />
+              <select id="set-alarm-unit" class="host-control">
+                <option value="min">MIN</option>
+                <option value="sec">SEC</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <label for="set-blip-map">BLIP MAP REVEAL</label>
+            <select id="set-blip-map" class="host-control">
+              <option value="on">ON (5 SEC)</option>
+              <option value="off">OFF (SOUND ONLY)</option>
+            </select>
           </div>
 
           <div class="setting-item full-width">
@@ -152,6 +168,11 @@
       <div id="blip-banner" class="blip-banner">
         <span id="blip-banner-text">NEXT BLIP IN 02:00</span>
       </div>
+
+      <!-- Out-of-Bounds Warning Strip -->
+      <div id="oob-banner" class="oob-banner hidden">
+        OUT OF PLAY ZONE — RETURN INSIDE BOUNDARY CIRCLE
+      </div>
     </div>
 
     <!-- Finder Head-Start Lockout Overlay -->
@@ -160,7 +181,7 @@
         <p class="eyebrow">HEAD-START ACTIVE</p>
         <h2>HOLD POSITION</h2>
         <div id="lockout-countdown" class="big-counter">40</div>
-        <p class="hint-text">Hiders are scattering. Do not move until the timer hits zero.</p>
+        <p class="hint-text">Hiders are scattering inside the boundary. Wait for zero.</p>
       </div>
     </div>
 
@@ -187,7 +208,7 @@
 
       <div class="hud-footer-row">
         <span id="hud-substatus" class="hud-subtext">GPS TRACKING ACTIVE</span>
-        <button id="recenter-btn" class="btn-small">CENTER MAP</button>
+        <button id="recenter-btn" class="btn-small">FIT ZONE</button>
       </div>
     </div>
   </div>
