@@ -620,3 +620,26 @@ button:active {
   letter-spacing: 1px;
   color: #888888;
 }
+/* Brand Logo Lockup */
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark,
+.hero-mark {
+  display: block;
+  flex-shrink: 0;
+}
+
+.home-brand-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.hero-title {
+  margin-bottom: 0;
+}
