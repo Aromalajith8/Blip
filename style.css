@@ -22,7 +22,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 20;
+  z-index: 30;
 }
 
 h1 {
@@ -60,7 +60,7 @@ h1 {
 }
 
 .leaflet-tile-pane {
-  filter: grayscale(100%) invert(100%) contrast(108%) brightness(75%);
+  filter: grayscale(100%) invert(100%) contrast(108%) brightness(78%);
 }
 
 .leaflet-control-zoom,
@@ -71,13 +71,13 @@ h1 {
 /* Overlays & Cards */
 .panel-overlay {
   position: relative;
-  z-index: 10;
+  z-index: 20;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(6px);
   overflow-y: auto;
 }
@@ -113,7 +113,7 @@ h2 {
   font-weight: 700;
   letter-spacing: 2px;
   color: #ffffff;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .field-label {
@@ -150,7 +150,7 @@ input:disabled, select:disabled {
 button {
   width: 100%;
   padding: 14px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 1.2px;
   text-transform: uppercase;
@@ -184,10 +184,19 @@ button:active {
   font-size: 0.75rem;
 }
 
+.btn-ghost-border {
+  background: #101010;
+  color: #999999;
+  border: 1px dashed #2e2e2e;
+  margin-top: 8px;
+  padding: 9px;
+  font-size: 0.7rem;
+}
+
 .btn-small {
   width: auto;
   padding: 8px 14px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   background: #181818;
   color: #e5e5e5;
   border: 1px solid #333333;
@@ -286,7 +295,7 @@ button:active {
   background: #111111;
   border: 1px solid #222222;
   border-radius: 6px;
-  max-height: 120px;
+  max-height: 130px;
   overflow-y: auto;
 }
 
@@ -296,7 +305,7 @@ button:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
 }
 
 .player-list li:last-child {
@@ -304,7 +313,7 @@ button:active {
 }
 
 .player-meta {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   letter-spacing: 1px;
   color: #888888;
 }
@@ -339,4 +348,144 @@ button:active {
   color: #777777;
   text-align: center;
   margin: 8px 0 14px;
+}
+
+/* Active Game HUD */
+.game-hud {
+  position: fixed;
+  inset: 0;
+  top: 52px;
+  z-index: 15;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hud-top {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  background: rgba(10, 10, 10, 0.92);
+  border-bottom: 1px solid #222222;
+  padding: 10px 16px;
+  backdrop-filter: blur(8px);
+}
+
+.hud-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-box.center {
+  align-items: center;
+}
+
+.hud-box.right {
+  align-items: flex-end;
+}
+
+.hud-label {
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: #777777;
+}
+
+.hud-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.hud-timer {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lockout / Caught Full-Screen Overlay */
+.lockout-overlay {
+  pointer-events: auto;
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 25;
+}
+
+.lockout-card {
+  text-align: center;
+  max-width: 340px;
+  background: #0c0c0c;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 28px 22px;
+}
+
+.big-counter {
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin: 10px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bottom Proximity & Controls */
+.hud-bottom {
+  pointer-events: auto;
+  background: rgba(10, 10, 10, 0.94);
+  border-top: 1px solid #222222;
+  padding: 14px 18px;
+}
+
+.capture-panel {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #141414;
+  border: 1px solid #333333;
+  border-radius: 6px;
+}
+
+.capture-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: #222222;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #ffffff;
+  transition: width 0.2s linear;
+}
+
+.hud-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hud-subtext {
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  color: #888888;
 }
