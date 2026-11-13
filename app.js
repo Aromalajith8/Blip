@@ -1,4 +1,4 @@
-\// 1. Firebase Configuration
+// 1. Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyABECV3VWFtqH9zzpsJIPBWWV4EvBHuDyQ",
   authDomain: "blip-game-7a142.firebaseapp.com",
@@ -37,6 +37,8 @@ map.on("dragstart zoomstart", (e) => {
 
 // 3. App State
 const myPlayerId = "p_" + Math.random().toString(36).substring(2, 9);
+let myPlayerName = "PLAYER";
+let myAssignedRole = "unassigned";
 let currentRoomCode = null;
 let isHost = false;
 let roomRef = null;
@@ -214,6 +216,8 @@ document.getElementById("create-room-btn").addEventListener("click", async () =>
     return;
   }
 
+  myPlayerName = name;
+  myAssignedRole = "unassigned";
   homeError.textContent = "CREATING ROOM...";
   try { unlockAndPlayTwoSecondAlarm(); } catch (_) {}
 
@@ -241,7 +245,7 @@ document.getElementById("create-room-btn").addEventListener("click", async () =>
       },
       players: {
         [myPlayerId]: {
-          name: name,
+          name: myPlayerName,
           role: "unassigned",
           status: "ready",
           audioReady: true
@@ -249,7 +253,6 @@ document.getElementById("create-room-btn").addEventListener("click", async () =>
       }
     });
 
-    roomRef.child(`players/${myPlayerId}`).onDisconnect().remove();
     enterLobby(code);
   } catch (err) {
     homeError.textContent = "ERROR: " + err.message.toUpperCase();
@@ -274,6 +277,8 @@ document.getElementById("join-room-btn").addEventListener("click", async () => {
     return;
   }
 
+  myPlayerName = name;
+  myAssignedRole = "unassigned";
   homeError.textContent = "JOINING...";
   try { unlockAndPlayTwoSecondAlarm(); } catch (_) {}
 
@@ -294,12 +299,11 @@ document.getElementById("join-room-btn").addEventListener("click", async () => {
   roomRef = targetRef;
 
   await roomRef.child(`players/${myPlayerId}`).set({
-    name: name,
+    name: myPlayerName,
     role: "unassigned",
     status: "ready",
     audioReady: true
   });
-  roomRef.child(`players/${myPlayerId}`).onDisconnect().remove();
   enterLobby(code);
 });
 
@@ -330,14 +334,20 @@ function enterLobby(code) {
     const players = room.players || {};
     const playerIds = Object.keys(players);
 
+    // Remember assigned role locally in case of brief network drop
+    if (players[myPlayerId]?.role) {
+      myAssignedRole = players[myPlayerId].role;
+    }
+
     playerCountEl.textContent = playerIds.length;
     playerListEl.innerHTML = "";
     playerIds.forEach((pid) => {
       const p = players[pid];
+      const displayName = p.name || (pid === myPlayerId ? myPlayerName : "PLAYER");
       const li = document.createElement("li");
       const gpsTag = typeof p.lat === "number" ? "GPS OK" : "LOCATING";
       const tag = pid === room.hostId ? `HOST · ${gpsTag}` : (p.isBot ? "SIM BOT" : gpsTag);
-      li.innerHTML = `<span>${p.name}</span><span class="player-meta">${tag}</span>`;
+      li.innerHTML = `<span>${displayName}</span><span class="player-meta">${tag}</span>`;
       playerListEl.appendChild(li);
     });
 
@@ -392,7 +402,7 @@ Object.entries(settingInputs).forEach(([key, inputEl]) => {
   });
 });
 
-// Add Simulated Test Bot (~6m away, well inside default 12m catch radius)
+// Add Simulated Test Bot (~6m away)
 addBotBtn.addEventListener("click", async () => {
   if (!isHost || !roomRef) return;
   const botId = "bot_" + Math.floor(100 + Math.random() * 900);
@@ -466,8 +476,10 @@ startGameBtn.addEventListener("click", async () => {
   const updatedPlayers = {};
 
   playerIds.forEach((pid) => {
+    const pName = players[pid].name || (pid === myPlayerId ? myPlayerName : "PLAYER");
     updatedPlayers[pid] = {
       ...players[pid],
+      name: pName,
       role: finderSet.has(pid) ? "finder" : "hider",
       status: "active",
       caughtBy: null,
@@ -548,12 +560,19 @@ function startGpsStreaming() {
       updateMyMapMarker(lat, lng, accuracy);
 
       if (roomRef) {
-        roomRef.child(`players/${myPlayerId}`).update({
+        const existingPlayer = latestRoomData?.players?.[myPlayerId];
+        const gpsPayload = {
+          name: existingPlayer?.name || myPlayerName,
           lat: lat,
           lng: lng,
           accuracy: accuracy,
           lastSeen: getServerNow()
-        });
+        };
+        if (!existingPlayer?.role && myAssignedRole !== "unassigned") {
+          gpsPayload.role = myAssignedRole;
+          gpsPayload.status = "active";
+        }
+        roomRef.child(`players/${myPlayerId}`).update(gpsPayload);
       }
     },
     (err) => {
@@ -589,7 +608,8 @@ function renderPlayZoneBoundary(room) {
 
 function updateMyMapMarker(lat, lng, accuracy) {
   const me = latestRoomData?.players?.[myPlayerId];
-  const labelText = me ? `YOU (${me.name})` : "YOU";
+  const resolvedName = me?.name || myPlayerName;
+  const labelText = `YOU (${resolvedName})`;
 
   if (!myMarker) {
     myAccuracyRing = L.circle([lat, lng], {
@@ -619,7 +639,8 @@ function updateMyMapMarker(lat, lng, accuracy) {
   }
 
   const radius = Number(latestRoomData?.settings?.captureRadiusMeters || 12);
-  if (me && me.role === "finder") {
+  const myRole = me?.role || myAssignedRole;
+  if (myRole === "finder") {
     if (!myRadiusCircle) {
       myRadiusCircle = L.circle([lat, lng], {
         radius: radius,
@@ -688,7 +709,8 @@ function updateInGameState(room) {
   const me = room.players?.[myPlayerId];
   if (!me) return;
 
-  hudRole.textContent = me.role.toUpperCase();
+  const myRole = me.role || myAssignedRole;
+  hudRole.textContent = myRole.toUpperCase();
   renderPlayZoneBoundary(room);
   if (myLastCoords) {
     updateMyMapMarker(myLastCoords.lat, myLastCoords.lng, myLastCoords.accuracy);
@@ -704,7 +726,7 @@ function updateInGameState(room) {
     showGlobalCaptureBanner(room.lastEvent.text);
   }
 
-  if (me.role === "hider" && me.status === "caught") {
+  if (myRole === "hider" && me.status === "caught") {
     caughtOverlay.classList.remove("hidden");
     caughtByText.textContent = me.caughtBy
       ? `Intercepted by ${me.caughtBy}. Stay put or return to start while the round finishes.`
@@ -724,6 +746,7 @@ function syncRadarMarkers(room, shouldRevealHidersOnMap, closePlayerIds) {
   const me = players[myPlayerId];
   if (!me) return;
 
+  const myRole = me.role || myAssignedRole;
   const visibleIds = new Set();
 
   Object.entries(players).forEach(([pid, p]) => {
@@ -731,29 +754,30 @@ function syncRadarMarkers(room, shouldRevealHidersOnMap, closePlayerIds) {
     if (typeof p.lat !== "number" || typeof p.lng !== "number") return;
 
     const isClose = closePlayerIds.has(pid);
+    const pName = p.name || "PLAYER";
     let shouldShow = false;
     let shouldBlink = false;
-    let label = p.name;
+    let label = pName;
 
-    if (me.role === "finder") {
+    if (myRole === "finder") {
       if (p.role === "finder") {
         shouldShow = true;
-        label = `${p.name} (FINDER)`;
+        label = `${pName} (FINDER)`;
       } else if (p.role === "hider" && p.status === "active") {
         if (isClose) {
           shouldShow = true;
           shouldBlink = true;
-          label = `CLOSE: ${p.name}`;
+          label = `CLOSE: ${pName}`;
         } else if (shouldRevealHidersOnMap || p.outOfBounds) {
           shouldShow = true;
-          label = p.outOfBounds ? `OOB: ${p.name}` : `BLIP: ${p.name}`;
+          label = p.outOfBounds ? `OOB: ${pName}` : `BLIP: ${pName}`;
         }
       }
-    } else if (me.role === "hider" && me.status === "active") {
+    } else if (myRole === "hider" && me.status === "active") {
       if (p.role === "finder" && isClose) {
         shouldShow = true;
         shouldBlink = true;
-        label = `FINDER NEAR: ${p.name}`;
+        label = `FINDER NEAR: ${pName}`;
       }
     }
 
@@ -819,16 +843,17 @@ function runMatchTick() {
   const me = players[myPlayerId];
   if (!me) return;
 
+  const myRole = me.role || myAssignedRole;
+  const myResolvedName = me.name || myPlayerName || "FINDER";
   const catchRadius = Number(settings.captureRadiusMeters || 12);
   const holdRequired = Number(settings.captureHoldSec || 10);
   const closeBlinkRadius = Math.max(catchRadius * 1.5, 18);
 
-  // Use live GPS if available, or zoneCenter fallback on desktop without GPS
   const activeMyCoords = myLastCoords || room.zoneCenter;
 
   // Check Play Zone Boundary for Active Hiders
   const zoneRadius = Number(settings.zoneRadiusMeters || 0);
-  if (zoneRadius > 0 && room.zoneCenter && myLastCoords && me.role === "hider" && me.status === "active") {
+  if (zoneRadius > 0 && room.zoneCenter && myLastCoords && myRole === "hider" && me.status === "active") {
     const distFromCenter = getDistanceMeters(
       room.zoneCenter.lat,
       room.zoneCenter.lng,
@@ -865,7 +890,7 @@ function runMatchTick() {
     proximityBanner.classList.add("hidden");
     capturePanel.classList.add("hidden");
 
-    if (me.role === "finder") {
+    if (myRole === "finder") {
       finderWaitOverlay.classList.remove("hidden");
       lockoutCountdown.textContent = remainingHeadStart;
     } else {
@@ -893,7 +918,7 @@ function runMatchTick() {
     const windowLeft = Math.ceil(5 - secIntoCycle);
     blipBanner.classList.add("active-ping");
 
-    if (me.role === "finder") {
+    if (myRole === "finder") {
       blipBannerText.textContent = mapRevealEnabled
         ? `BLIP DETECTED — HIDERS ON MAP (${windowLeft}S)`
         : `BLIP ALARM RINGING — LISTEN CLOSELY (${windowLeft}S)`;
@@ -903,7 +928,7 @@ function runMatchTick() {
         : `BLIP ALARM — PHONE RINGING (${windowLeft}S)`;
     }
 
-    if (me.role === "hider" && me.status === "active" && lastAlarmCycleTriggered !== currentCycle) {
+    if (myRole === "hider" && me.status === "active" && lastAlarmCycleTriggered !== currentCycle) {
       lastAlarmCycleTriggered = currentCycle;
       unlockAndPlayTwoSecondAlarm();
     }
@@ -945,7 +970,7 @@ function runMatchTick() {
   const closePlayerIds = new Set();
 
   // CASE 1: FINDER PROXIMITY BLINK + LIVE DISTANCE + 10s -> 0s CAPTURE COUNTDOWN
-  if (me.role === "finder") {
+  if (myRole === "finder") {
     if (!activeMyCoords) {
       hudSubstatus.textContent = "WAITING FOR YOUR GPS LOCK...";
     } else {
@@ -956,11 +981,12 @@ function runMatchTick() {
 
       activeHiders.forEach(([hid, hider]) => {
         if (typeof hider.lat === "number" && typeof hider.lng === "number") {
+          const hiderName = hider.name || "HIDER";
           const d = getDistanceMeters(activeMyCoords.lat, activeMyCoords.lng, hider.lat, hider.lng);
 
           if (d < nearestAnyDist) {
             nearestAnyDist = d;
-            nearestAnyHider = { name: hider.name, dist: Math.round(d) };
+            nearestAnyHider = { name: hiderName, dist: Math.round(d) };
           }
 
           if (d <= closeBlinkRadius) {
@@ -971,24 +997,23 @@ function runMatchTick() {
             captureHoldTracker[hid] = (captureHoldTracker[hid] || 0) + 0.5;
             if (d < lockingDist) {
               lockingDist = d;
-              lockingHider = { id: hid, name: hider.name, dist: Math.round(d), held: captureHoldTracker[hid] };
+              lockingHider = { id: hid, name: hiderName, dist: Math.round(d), held: captureHoldTracker[hid] };
             }
 
             if (captureHoldTracker[hid] >= holdRequired) {
               captureHoldTracker[hid] = 0;
-              const broadcastMsg = `${hider.name} WAS CAPTURED BY ${me.name}`;
+              const broadcastMsg = `${hiderName} WAS CAPTURED BY ${myResolvedName}`;
               roomRef.update({
                 [`players/${hid}/status`]: "caught",
-                [`players/${hid}/caughtBy`]: me.name,
+                [`players/${hid}/caughtBy`]: myResolvedName,
                 lastEvent: {
                   id: `${hid}_${Date.now()}`,
                   text: broadcastMsg,
                   ts: getServerNow()
                 }
-              });
+              }).catch((err) => console.error("Capture update failed:", err));
             }
           } else {
-            // Gentle decay so a 1-second indoor GPS wobble doesn't wipe out progress
             captureHoldTracker[hid] = Math.max(0, (captureHoldTracker[hid] || 0) - 0.5);
           }
         }
@@ -1022,12 +1047,13 @@ function runMatchTick() {
   }
 
   // CASE 2: HIDER PROXIMITY BLINK + 10s -> 0s DANGER COUNTDOWN
-  if (me.role === "hider" && me.status === "active" && activeMyCoords) {
+  if (myRole === "hider" && me.status === "active" && activeMyCoords) {
     let closestFinder = null;
     let closestFinderDist = Infinity;
 
     activeFinders.forEach(([fid, finder]) => {
       if (typeof finder.lat === "number" && typeof finder.lng === "number") {
+        const finderName = finder.name || "FINDER";
         const d = getDistanceMeters(activeMyCoords.lat, activeMyCoords.lng, finder.lat, finder.lng);
 
         if (d <= closeBlinkRadius) {
@@ -1038,7 +1064,7 @@ function runMatchTick() {
           hiderEscapeTracker[fid] = (hiderEscapeTracker[fid] || 0) + 0.5;
           if (d < closestFinderDist) {
             closestFinderDist = d;
-            closestFinder = { name: finder.name, dist: Math.round(d), held: hiderEscapeTracker[fid] };
+            closestFinder = { name: finderName, dist: Math.round(d), held: hiderEscapeTracker[fid] };
           }
         } else {
           hiderEscapeTracker[fid] = Math.max(0, (hiderEscapeTracker[fid] || 0) - 0.5);
@@ -1068,7 +1094,7 @@ function runMatchTick() {
       capturePanel.classList.add("hidden");
       captureBarFill.style.width = "100%";
     }
-  } else if (me.role === "hider" && me.status === "caught") {
+  } else if (myRole === "hider" && me.status === "caught") {
     proximityBanner.classList.add("hidden");
     capturePanel.classList.add("hidden");
   }
@@ -1105,8 +1131,9 @@ function renderGameOver(room) {
   list.innerHTML = "";
   Object.values(room.players || {}).forEach((p) => {
     const li = document.createElement("li");
-    const statusLabel = p.role === "finder" ? "FINDER" : p.status.toUpperCase();
-    li.innerHTML = `<span>${p.name}</span><span class="player-meta">${statusLabel}</span>`;
+    const pName = p.name || "PLAYER";
+    const statusLabel = p.role === "finder" ? "FINDER" : (p.status || "ACTIVE").toUpperCase();
+    li.innerHTML = `<span>${pName}</span><span class="player-meta">${statusLabel}</span>`;
     list.appendChild(li);
   });
 }
@@ -1117,7 +1144,8 @@ document.getElementById("back-to-lobby-btn").addEventListener("click", async () 
     const players = snap.val() || {};
     const resetPlayers = {};
     Object.entries(players).forEach(([pid, p]) => {
-      resetPlayers[pid] = { ...p, role: "unassigned", status: "ready", caughtBy: null, outOfBounds: false };
+      const pName = p.name || (pid === myPlayerId ? myPlayerName : "PLAYER");
+      resetPlayers[pid] = { ...p, name: pName, role: "unassigned", status: "ready", caughtBy: null, outOfBounds: false };
     });
     await roomRef.update({
       status: "lobby",
