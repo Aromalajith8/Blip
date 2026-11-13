@@ -10,7 +10,7 @@
 <body>
   <header>
     <div>
-      <h1>BLIP <span class="badge">v0.3</span></h1>
+      <h1>BLIP <span class="badge">v0.4</span></h1>
     </div>
     <p id="status-text">CONNECTING...</p>
   </header>
@@ -120,19 +120,26 @@
 
   <!-- SCREEN 3: ACTIVE GAME HUD -->
   <div id="screen-game" class="game-hud hidden">
-    <!-- Top Tactical Bar -->
-    <div class="hud-top">
-      <div class="hud-box">
-        <span class="hud-label">YOUR ROLE</span>
-        <span id="hud-role" class="hud-value">---</span>
+    <div>
+      <!-- Top Tactical Bar -->
+      <div class="hud-top">
+        <div class="hud-box">
+          <span class="hud-label">YOUR ROLE</span>
+          <span id="hud-role" class="hud-value">---</span>
+        </div>
+        <div class="hud-box center">
+          <span id="hud-phase-label" class="hud-label">TIME LEFT</span>
+          <span id="hud-timer" class="hud-timer">00:00</span>
+        </div>
+        <div class="hud-box right">
+          <span class="hud-label">CAPTURED</span>
+          <span id="hud-score" class="hud-value">0 / 1</span>
+        </div>
       </div>
-      <div class="hud-box center">
-        <span id="hud-phase-label" class="hud-label">TIME LEFT</span>
-        <span id="hud-timer" class="hud-timer">00:00</span>
-      </div>
-      <div class="hud-box right">
-        <span class="hud-label">CAPTURED</span>
-        <span id="hud-score" class="hud-value">0 / 1</span>
+
+      <!-- Blip Status Strip (Shows countdown to next 5s reveal or active reveal alert) -->
+      <div id="blip-banner" class="blip-banner">
+        <span id="blip-banner-text">NEXT BLIP IN 02:00</span>
       </div>
     </div>
 
