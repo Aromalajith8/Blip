@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BLIP — Real-World Hide & Seek</title>
+  
+  <!-- Leaflet Map CSS (Free OpenStreetMap) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>BLIP <span class="badge">v0.1</span></h1>
+    <p id="status-text">Waiting for GPS & Database...</p>
+  </header>
+
+  <!-- Live Map Container -->
+  <div id="map"></div>
+
+  <footer>
+    <button id="locate-btn">Enable GPS & Ping Me</button>
+  </footer>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Firebase App & Realtime Database SDKs (Compat version for easy plain JS) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  
+  <script src="app.js"></script>
+</body>
+</html>
