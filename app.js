@@ -12,10 +12,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 2. Map & Markers
+// 2. Map & Layers
 const map = L.map("map", {
   zoomControl: false,
-  minZoom: 14,
+  minZoom: 13,
   maxZoom: 19
 }).setView([11.2588, 75.7804], 16);
 
@@ -26,11 +26,11 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 let myMarker = null;
 let myAccuracyRing = null;
 let myRadiusCircle = null;
-let otherMarkers = {}; // { playerId: L.CircleMarker }
+let playZoneCircle = null;
+let otherMarkers = {};
 let autoZoomEnabled = true;
 let hasInitialMapFit = false;
 
-// Pause auto-zoom if player manually drags/zooms the map; Center Map re-enables it
 map.on("dragstart zoomstart", (e) => {
   if (e.originalEvent) autoZoomEnabled = false;
 });
@@ -85,6 +85,7 @@ const hudScore = document.getElementById("hud-score");
 const hudSubstatus = document.getElementById("hud-substatus");
 const blipBanner = document.getElementById("blip-banner");
 const blipBannerText = document.getElementById("blip-banner-text");
+const oobBanner = document.getElementById("oob-banner");
 
 const finderWaitOverlay = document.getElementById("finder-wait-overlay");
 const lockoutCountdown = document.getElementById("lockout-countdown");
@@ -97,11 +98,14 @@ const captureBarFill = document.getElementById("capture-bar-fill");
 
 const settingInputs = {
   finderCount: document.getElementById("set-finders"),
+  zoneRadiusMeters: document.getElementById("set-zone"),
   headStartSec: document.getElementById("set-headstart"),
   matchDurationMin: document.getElementById("set-duration"),
   captureRadiusMeters: document.getElementById("set-radius"),
   captureHoldSec: document.getElementById("set-hold"),
-  alarmIntervalMin: document.getElementById("set-alarm"),
+  alarmIntervalVal: document.getElementById("set-alarm-val"),
+  alarmIntervalUnit: document.getElementById("set-alarm-unit"),
+  blipMapReveal: document.getElementById("set-blip-map"),
   targetCaptures: document.getElementById("set-target")
 };
 
@@ -116,7 +120,7 @@ db.ref(".info/connected").on("value", (snap) => {
   }
 });
 
-// 6. Screen Wake Lock (Keeps Screen Awake in Pocket)
+// 6. Screen Wake Lock
 async function requestWakeLock() {
   try {
     if ("wakeLock" in navigator && !wakeLockSentinel) {
@@ -134,7 +138,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// 7. Web Audio 2-Second Alarm
+// 7. Web Audio 2-Second Alarm (Always Rings on Blip)
 function unlockAndPlayTwoSecondAlarm() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!audioCtx) audioCtx = new AudioContextClass();
@@ -187,11 +191,14 @@ document.getElementById("create-room-btn").addEventListener("click", async () =>
     createdAt: firebase.database.ServerValue.TIMESTAMP,
     settings: {
       finderCount: 1,
+      zoneRadiusMeters: 150,
       headStartSec: 40,
       matchDurationMin: 10,
       captureRadiusMeters: 12,
       captureHoldSec: 10,
-      alarmIntervalMin: 2,
+      alarmIntervalVal: 2,
+      alarmIntervalUnit: "min",
+      blipMapReveal: "on",
       targetCaptures: 1
     },
     players: {
@@ -251,7 +258,7 @@ document.getElementById("join-room-btn").addEventListener("click", async () => {
   enterLobby(code);
 });
 
-// 10. Enter Lobby & Start GPS Early so Playing Area is Ready
+// 10. Enter Lobby & Start GPS Early
 function enterLobby(code) {
   homeError.textContent = "";
   showScreen("lobby");
@@ -325,17 +332,22 @@ function showScreen(name) {
   if (name === "gameover") screenGameOver.classList.remove("hidden");
 }
 
-// Host Setting Sync
+// Host Setting Sync (Supports both numbers and string options)
 Object.entries(settingInputs).forEach(([key, inputEl]) => {
   inputEl.addEventListener("change", () => {
     if (!isHost || !roomRef) return;
-    const val = Math.max(Number(inputEl.min || 1), Number(inputEl.value));
-    inputEl.value = val;
-    roomRef.child(`settings/${key}`).set(val);
+    if (inputEl.type === "number") {
+      const minVal = inputEl.min !== "" ? Number(inputEl.min) : 0;
+      const val = Math.max(minVal, Number(inputEl.value));
+      inputEl.value = val;
+      roomRef.child(`settings/${key}`).set(val);
+    } else {
+      roomRef.child(`settings/${key}`).set(inputEl.value);
+    }
   });
 });
 
-// Add Simulated Test Bot (~25 meters away in the playing area)
+// Add Simulated Test Bot inside the Play Zone
 addBotBtn.addEventListener("click", async () => {
   if (!isHost || !roomRef) return;
   const botId = "bot_" + Math.floor(100 + Math.random() * 900);
@@ -380,7 +392,7 @@ document.getElementById("leave-room-btn").addEventListener("click", () => {
   showScreen("home");
 });
 
-// 11. Host Starts Match
+// 11. Host Starts Match & Locks Play Zone Center
 startGameBtn.addEventListener("click", async () => {
   if (!isHost || !roomRef) return;
   const snap = await roomRef.once("value");
@@ -393,6 +405,17 @@ startGameBtn.addEventListener("click", async () => {
     lobbyStatus.textContent = `NEED AT LEAST ${finderCount + 1} PLAYERS TO START.`;
     lobbyStatus.style.color = "#ff5c5c";
     return;
+  }
+
+  // Pick Play Zone Center from Host GPS (or first player with valid GPS)
+  let zoneCenter = myLastCoords ? { lat: myLastCoords.lat, lng: myLastCoords.lng } : null;
+  if (!zoneCenter) {
+    for (const pid of playerIds) {
+      if (typeof players[pid].lat === "number" && typeof players[pid].lng === "number") {
+        zoneCenter = { lat: players[pid].lat, lng: players[pid].lng };
+        break;
+      }
+    }
   }
 
   const shuffled = [...playerIds];
@@ -408,13 +431,15 @@ startGameBtn.addEventListener("click", async () => {
     updatedPlayers[pid] = {
       ...players[pid],
       role: finderSet.has(pid) ? "finder" : "hider",
-      status: "active"
+      status: "active",
+      outOfBounds: false
     };
   });
 
   await roomRef.update({
     status: "playing",
     startTime: firebase.database.ServerValue.TIMESTAMP,
+    zoneCenter: zoneCenter,
     winner: null,
     winReason: null,
     players: updatedPlayers
@@ -431,6 +456,7 @@ function startActiveMatch() {
   hasInitialMapFit = false;
 
   startGpsStreaming();
+  renderPlayZoneBoundary(latestRoomData);
   fitMapToPlayingArea(latestRoomData, true);
 
   if (gameLoopInterval) clearInterval(gameLoopInterval);
@@ -443,9 +469,14 @@ function stopActiveMatchLoops() {
     gameLoopInterval = null;
   }
   clearOtherMarkers();
+  if (playZoneCircle) {
+    map.removeLayer(playZoneCircle);
+    playZoneCircle = null;
+  }
   finderWaitOverlay.classList.add("hidden");
   caughtOverlay.classList.add("hidden");
   capturePanel.classList.add("hidden");
+  oobBanner.classList.add("hidden");
 }
 
 function stopGpsStreaming() {
@@ -490,6 +521,30 @@ function startGpsStreaming() {
   );
 }
 
+function renderPlayZoneBoundary(room) {
+  const zoneRadius = Number(room?.settings?.zoneRadiusMeters || 0);
+  const center = room?.zoneCenter;
+
+  if (zoneRadius > 0 && center && typeof center.lat === "number") {
+    if (!playZoneCircle) {
+      playZoneCircle = L.circle([center.lat, center.lng], {
+        radius: zoneRadius,
+        color: "#666666",
+        weight: 2,
+        dashArray: "8 6",
+        fillColor: "#ffffff",
+        fillOpacity: 0.02
+      }).addTo(map);
+    } else {
+      playZoneCircle.setLatLng([center.lat, center.lng]);
+      playZoneCircle.setRadius(zoneRadius);
+    }
+  } else if (playZoneCircle) {
+    map.removeLayer(playZoneCircle);
+    playZoneCircle = null;
+  }
+}
+
 function updateMyMapMarker(lat, lng, accuracy) {
   const me = latestRoomData?.players?.[myPlayerId];
   const labelText = me ? `YOU (${me.name})` : "YOU";
@@ -521,7 +576,6 @@ function updateMyMapMarker(lat, lng, accuracy) {
     }
   }
 
-  // Draw capture radius ring if I am a Finder
   const radius = Number(latestRoomData?.settings?.captureRadiusMeters || 12);
   if (me && me.role === "finder") {
     if (!myRadiusCircle) {
@@ -547,34 +601,34 @@ function updateMyMapMarker(lat, lng, accuracy) {
   }
 }
 
-// Auto-Zooms Minimally to Frame the Playing Area (All Known Players)
+// Auto-Zooms Minimally to Frame the Play Zone Boundary (or Active Players)
 function fitMapToPlayingArea(room, force = false) {
   if (!room || (!autoZoomEnabled && !force)) return;
 
-  const points = [];
-  if (myLastCoords) {
-    points.push([myLastCoords.lat, myLastCoords.lng]);
+  renderPlayZoneBoundary(room);
+  hasInitialMapFit = true;
+
+  if (playZoneCircle) {
+    map.fitBounds(playZoneCircle.getBounds(), {
+      padding: [36, 36],
+      maxZoom: 18,
+      animate: true
+    });
+    return;
   }
 
+  const points = [];
+  if (myLastCoords) points.push([myLastCoords.lat, myLastCoords.lng]);
   Object.entries(room.players || {}).forEach(([pid, p]) => {
     if (pid !== myPlayerId && typeof p.lat === "number" && typeof p.lng === "number") {
       points.push([p.lat, p.lng]);
     }
   });
 
-  if (points.length === 0) return;
-
-  hasInitialMapFit = true;
   if (points.length === 1) {
     map.setView(points[0], 17, { animate: true });
-  } else {
-    const bounds = L.latLngBounds(points);
-    map.fitBounds(bounds, {
-      padding: [70, 70],
-      minZoom: 15,
-      maxZoom: 18,
-      animate: true
-    });
+  } else if (points.length > 1) {
+    map.fitBounds(L.latLngBounds(points), { padding: [70, 70], minZoom: 15, maxZoom: 18, animate: true });
   }
 }
 
@@ -583,6 +637,7 @@ function updateInGameState(room) {
   if (!me) return;
 
   hudRole.textContent = me.role.toUpperCase();
+  renderPlayZoneBoundary(room);
   if (myLastCoords) {
     updateMyMapMarker(myLastCoords.lat, myLastCoords.lng, myLastCoords.accuracy);
   }
@@ -604,10 +659,7 @@ function clearOtherMarkers() {
   otherMarkers = {};
 }
 
-// Renders Other Players on Map:
-// - Finders always see co-Finders
-// - Finders see active Hiders during the 5-second Blip reveal
-function syncRadarMarkers(room, isBlipRevealActive) {
+function syncRadarMarkers(room, shouldRevealHidersOnMap) {
   const players = room.players || {};
   const me = players[myPlayerId];
   if (!me) return;
@@ -625,9 +677,9 @@ function syncRadarMarkers(room, isBlipRevealActive) {
       if (p.role === "finder") {
         shouldShow = true;
         label = `${p.name} (FINDER)`;
-      } else if (p.role === "hider" && p.status === "active" && isBlipRevealActive) {
+      } else if (p.role === "hider" && p.status === "active" && (shouldRevealHidersOnMap || p.outOfBounds)) {
         shouldShow = true;
-        label = `BLIP: ${p.name}`;
+        label = p.outOfBounds ? `OOB: ${p.name}` : `BLIP: ${p.name}`;
       }
     }
 
@@ -650,13 +702,19 @@ function syncRadarMarkers(room, isBlipRevealActive) {
     }
   });
 
-  // Remove markers that are no longer visible (e.g., after 5-second Blip ends)
   Object.keys(otherMarkers).forEach((pid) => {
     if (!visibleIds.has(pid)) {
       map.removeLayer(otherMarkers[pid]);
       delete otherMarkers[pid];
     }
   });
+}
+
+function getAlarmIntervalSeconds(settings) {
+  const rawVal = Math.max(1, Number(settings.alarmIntervalVal || 2));
+  const unit = settings.alarmIntervalUnit || "min";
+  const totalSec = unit === "sec" ? rawVal : rawVal * 60;
+  return Math.max(10, totalSec); // Minimum 10s safety floor
 }
 
 function runMatchTick() {
@@ -668,10 +726,34 @@ function runMatchTick() {
   const me = players[myPlayerId];
   if (!me) return;
 
+  // Check Play Zone Boundary for Active Hiders
+  const zoneRadius = Number(settings.zoneRadiusMeters || 0);
+  if (zoneRadius > 0 && room.zoneCenter && myLastCoords && me.role === "hider" && me.status === "active") {
+    const distFromCenter = getDistanceMeters(
+      room.zoneCenter.lat,
+      room.zoneCenter.lng,
+      myLastCoords.lat,
+      myLastCoords.lng
+    );
+    const isOut = distFromCenter > zoneRadius;
+    if (isOut) {
+      oobBanner.classList.remove("hidden");
+      oobBanner.textContent = `OUT OF PLAY ZONE (${Math.round(distFromCenter)}M / ${zoneRadius}M) — RETURN NOW`;
+    } else {
+      oobBanner.classList.add("hidden");
+    }
+    if (Boolean(me.outOfBounds) !== isOut && roomRef) {
+      roomRef.child(`players/${myPlayerId}/outOfBounds`).set(isOut);
+    }
+  } else {
+    oobBanner.classList.add("hidden");
+  }
+
   const elapsedSec = Math.max(0, (getServerNow() - room.startTime) / 1000);
   const headStartSec = Number(settings.headStartSec || 40);
   const totalMatchSec = Number(settings.matchDurationMin || 10) * 60;
-  const alarmIntervalSec = Number(settings.alarmIntervalMin || 2) * 60;
+  const alarmIntervalSec = getAlarmIntervalSeconds(settings);
+  const mapRevealEnabled = (settings.blipMapReveal || "on") === "on";
 
   // PHASE A: Head-Start Countdown
   if (elapsedSec < headStartSec) {
@@ -679,7 +761,7 @@ function runMatchTick() {
     hudPhaseLabel.textContent = "HIDE PHASE";
     hudTimer.textContent = formatTime(remainingHeadStart);
     blipBanner.classList.remove("active-ping");
-    blipBannerText.textContent = "SCATTER PHASE — RADAR STEALTH";
+    blipBannerText.textContent = "SCATTER PHASE — STAY INSIDE ZONE";
 
     if (me.role === "finder") {
       finderWaitOverlay.classList.remove("hidden");
@@ -700,21 +782,26 @@ function runMatchTick() {
   hudPhaseLabel.textContent = "HUNT TIME";
   hudTimer.textContent = formatTime(remainingMatch);
 
-  // Periodic Blip Event (Every alarmIntervalSec, reveals Hiders for 5s & plays 2s alarm)
+  // Periodic Blip Event (Alarm ALWAYS rings; Map reveal follows Host setting)
   const currentCycle = Math.floor(huntElapsed / alarmIntervalSec);
   const secIntoCycle = huntElapsed % alarmIntervalSec;
-  const isBlipRevealActive = currentCycle >= 1 && secIntoCycle < 5;
+  const isBlipWindowActive = currentCycle >= 1 && secIntoCycle < 5;
 
-  if (isBlipRevealActive) {
-    const revealLeft = Math.ceil(5 - secIntoCycle);
+  if (isBlipWindowActive) {
+    const windowLeft = Math.ceil(5 - secIntoCycle);
     blipBanner.classList.add("active-ping");
+
     if (me.role === "finder") {
-      blipBannerText.textContent = `BLIP SIGNAL DETECTED — HIDERS VISIBLE (${revealLeft}S)`;
+      blipBannerText.textContent = mapRevealEnabled
+        ? `BLIP DETECTED — HIDERS ON MAP (${windowLeft}S)`
+        : `BLIP ALARM RINGING — LISTEN CLOSELY (${windowLeft}S)`;
     } else {
-      blipBannerText.textContent = `BLIP ALARM ACTIVE — LOCATION EXPOSED (${revealLeft}S)`;
+      blipBannerText.textContent = mapRevealEnabled
+        ? `BLIP ALARM — SOUND & MAP EXPOSED (${windowLeft}S)`
+        : `BLIP ALARM — PHONE RINGING (${windowLeft}S)`;
     }
 
-    // Play 2-second alarm once per cycle on active Hiders' phones
+    // 2-Second Alarm ALWAYS triggers on active Hiders once per cycle
     if (me.role === "hider" && me.status === "active" && lastAlarmCycleTriggered !== currentCycle) {
       lastAlarmCycleTriggered = currentCycle;
       unlockAndPlayTwoSecondAlarm();
@@ -725,12 +812,10 @@ function runMatchTick() {
     blipBannerText.textContent = `NEXT BLIP IN ${formatTime(secUntilNextBlip)}`;
   }
 
-  syncRadarMarkers(room, isBlipRevealActive);
-  if (isBlipRevealActive && me.role === "finder") {
-    fitMapToPlayingArea(room, false);
-  }
+  const shouldRevealHidersOnMap = isBlipWindowActive && mapRevealEnabled;
+  syncRadarMarkers(room, shouldRevealHidersOnMap);
 
-  // Check if Time Expired -> Hiders Win
+  // Check Win Conditions
   if (remainingMatch <= 0) {
     if (isHost) {
       roomRef.update({
@@ -742,7 +827,6 @@ function runMatchTick() {
     return;
   }
 
-  // Check if Target Captures Reached -> Finders Win
   const allPlayerEntries = Object.entries(players);
   const activeHiders = allPlayerEntries.filter(([, p]) => p.role === "hider" && p.status === "active");
   const caughtHiders = allPlayerEntries.filter(([, p]) => p.role === "hider" && p.status === "caught");
@@ -841,11 +925,12 @@ document.getElementById("back-to-lobby-btn").addEventListener("click", async () 
     const players = snap.val() || {};
     const resetPlayers = {};
     Object.entries(players).forEach(([pid, p]) => {
-      resetPlayers[pid] = { ...p, role: "unassigned", status: "ready" };
+      resetPlayers[pid] = { ...p, role: "unassigned", status: "ready", outOfBounds: false };
     });
     await roomRef.update({
       status: "lobby",
       startTime: null,
+      zoneCenter: null,
       winner: null,
       winReason: null,
       players: resetPlayers
