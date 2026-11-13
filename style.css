@@ -1,0 +1,71 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: #0b0f14;
+  color: #e6edf3;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh; /* Fits mobile screens cleanly without address-bar cutoff */
+}
+
+header {
+  padding: 14px 16px;
+  background: #111822;
+  border-bottom: 1px solid #1f2937;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  font-size: 1.25rem;
+  letter-spacing: 2px;
+  color: #00ff9d;
+}
+
+.badge {
+  font-size: 0.7rem;
+  background: #1f2937;
+  color: #9ca3af;
+  padding: 2px 6px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+#status-text {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+#map {
+  flex: 1;
+  width: 100%;
+  background: #0b0f14;
+}
+
+footer {
+  padding: 14px 16px;
+  background: #111822;
+  border-top: 1px solid #1f2937;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0b0f14;
+  background: #00ff9d;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:active {
+  opacity: 0.85;
+}
