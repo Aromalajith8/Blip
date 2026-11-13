@@ -10,7 +10,7 @@
 <body>
   <header>
     <div>
-      <h1>BLIP <span class="badge">v0.5</span></h1>
+      <h1>BLIP <span class="badge">v0.6</span></h1>
     </div>
     <p id="status-text">CONNECTING...</p>
   </header>
@@ -169,6 +169,16 @@
         <span id="blip-banner-text">NEXT BLIP IN 02:00</span>
       </div>
 
+      <!-- Global Capture Broadcast Banner -->
+      <div id="event-banner" class="event-banner hidden">
+        <span id="event-banner-text">PLAYER CAPTURED</span>
+      </div>
+
+      <!-- Close Proximity Radar Alert Strip -->
+      <div id="proximity-banner" class="proximity-banner hidden">
+        <span id="proximity-banner-text">CLOSE SIGNAL DETECTED</span>
+      </div>
+
       <!-- Out-of-Bounds Warning Strip -->
       <div id="oob-banner" class="oob-banner hidden">
         OUT OF PLAY ZONE — RETURN INSIDE BOUNDARY CIRCLE
@@ -190,16 +200,16 @@
       <div class="lockout-card">
         <p class="eyebrow">SIGNAL INTERCEPTED</p>
         <h2>YOU WERE CAUGHT</h2>
-        <p class="hint-text">Stay put or walk back to the start point while the round finishes.</p>
+        <p id="caught-by-text" class="hint-text">Stay put or walk back to the start point while the round finishes.</p>
       </div>
     </div>
 
-    <!-- Bottom Proximity & Status Bar -->
+    <!-- Bottom Proximity & Countdown Bar (Shows 10s -> 0s on both Finder & Hider) -->
     <div class="hud-bottom">
       <div id="capture-panel" class="capture-panel hidden">
         <div class="capture-header">
           <span id="capture-target-name">LOCKING TARGET...</span>
-          <span id="capture-timer-text">0.0 / 10s</span>
+          <span id="capture-timer-text">10.0S</span>
         </div>
         <div class="progress-track">
           <div id="capture-bar-fill" class="progress-fill"></div>
