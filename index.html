@@ -18,23 +18,34 @@
   <!-- Live Radar Map -->
   <div id="map"></div>
 
-  <!-- SCREEN 1: HOME (CREATE OR JOIN) -->
+  <!-- SCREEN 1: HOME (IDENTITY -> JOIN OR HOST) -->
   <main id="screen-home" class="panel-overlay">
     <div class="card">
       <p class="eyebrow">REAL-WORLD RADAR TAG</p>
       <h2>ENTER THE FIELD</h2>
 
-      <label class="field-label" for="player-name">CALLSIGN / NAME</label>
-      <input type="text" id="player-name" maxlength="16" placeholder="e.g. alpha,charlie,.." autocomplete="off" />
-
-      <button id="create-room-btn" class="btn-primary">CREATE MATCH (HOST)</button>
-
-      <div class="divider"><span>OR JOIN EXISTING</span></div>
-
-      <div class="join-row">
-        <input type="tel" id="room-code-input" maxlength="4" placeholder="4-DIGIT CODE" autocomplete="off" />
-        <button id="join-room-btn" class="btn-secondary">JOIN</button>
+      <!-- Step 1: Universal Player Identity -->
+      <div class="identity-box">
+        <label class="field-label" for="player-name">YOUR CALLSIGN (REQUIRED FOR ALL PLAYERS)</label>
+        <input type="text" id="player-name" maxlength="16" placeholder="e.g. alpha,charlie,.." autocomplete="off" />
       </div>
+
+      <!-- Option A: Join Existing Room -->
+      <div class="action-section">
+        <label class="field-label" for="room-code-input">JOIN EXISTING MATCH</label>
+        <div class="join-row">
+          <input type="tel" id="room-code-input" maxlength="4" placeholder="4-DIGIT CODE" autocomplete="off" />
+          <button id="join-room-btn" class="btn-primary">JOIN</button>
+        </div>
+      </div>
+
+      <div class="divider"><span>OR START YOUR OWN</span></div>
+
+      <!-- Option B: Create Host Room -->
+      <div class="action-section">
+        <button id="create-room-btn" class="btn-secondary">CREATE MATCH (HOST)</button>
+      </div>
+
       <p id="home-error" class="error-msg"></p>
     </div>
   </main>
@@ -137,7 +148,7 @@
         </div>
       </div>
 
-      <!-- Blip Status Strip (Shows countdown to next 5s reveal or active reveal alert) -->
+      <!-- Blip Status Strip -->
       <div id="blip-banner" class="blip-banner">
         <span id="blip-banner-text">NEXT BLIP IN 02:00</span>
       </div>
