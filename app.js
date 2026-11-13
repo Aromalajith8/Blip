@@ -7,7 +7,7 @@ import { initializeApp } from "firebase/app";
 const firebaseConfig = {
   apiKey: "AIzaSyABECV3VWFtqH9zzpsJIPBWWV4EvBHuDyQ",
   authDomain: "blip-game-7a142.firebaseapp.com",
-  databaseURL: "https://console.firebase.google.com/project/blip-game-7a142/database/blip-game-7a142-default-rtdb/data/~2F",
+  databaseURL: "https://blip-game-7a142-default-rtdb.asia-southeast1.firebasedatabase.app/",
   projectId: "blip-game-7a142",
   storageBucket: "blip-game-7a142.firebasestorage.app",
   messagingSenderId: "906503270744",
