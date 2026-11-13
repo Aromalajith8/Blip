@@ -1,4 +1,21 @@
-// 1. PASTE YOUR FIREBASE CONFIG HERE (from Step 1)
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyABECV3VWFtqH9zzpsJIPBWWV4EvBHuDyQ",
+  authDomain: "blip-game-7a142.firebaseapp.com",
+  databaseURL: "https://blip-game-7a142-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "blip-game-7a142",
+  storageBucket: "blip-game-7a142.firebasestorage.app",
+  messagingSenderId: "906503270744",
+  appId: "1:906503270744:web:87b829317c424ac9b2f52d"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 const firebaseConfig = {
   apiKey: "PASTE_YOUR_API_KEY",
   authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
