@@ -10,12 +10,12 @@
 <body>
   <header>
     <div>
-      <h1>BLIP <span class="badge">v0.2</span></h1>
+      <h1>BLIP <span class="badge">v0.3</span></h1>
     </div>
     <p id="status-text">CONNECTING...</p>
   </header>
 
-  <!-- Background Radar Map -->
+  <!-- Live Radar Map -->
   <div id="map"></div>
 
   <!-- SCREEN 1: HOME (CREATE OR JOIN) -->
@@ -57,6 +57,7 @@
           <span id="player-count">0</span>
         </div>
         <ul id="player-list" class="player-list"></ul>
+        <button id="add-bot-btn" class="btn-ghost-border hidden">+ ADD SIMULATED PLAYER (TEST)</button>
       </section>
 
       <!-- Host Rules Panel -->
@@ -77,12 +78,12 @@
 
           <div class="setting-item">
             <label for="set-headstart">HIDE TIME (SEC)</label>
-            <input type="number" id="set-headstart" class="host-control" min="10" max="300" value="40" />
+            <input type="number" id="set-headstart" class="host-control" min="5" max="300" value="40" />
           </div>
 
           <div class="setting-item">
             <label for="set-duration">GAME TIME (MIN)</label>
-            <input type="number" id="set-duration" class="host-control" min="2" max="60" value="10" />
+            <input type="number" id="set-duration" class="host-control" min="1" max="60" value="10" />
           </div>
 
           <div class="setting-item">
@@ -107,15 +108,85 @@
         </div>
       </section>
 
-      <!-- Audio & GPS Readiness -->
       <button id="test-audio-btn" class="btn-secondary">
         TEST 2S BLIP ALARM (UNLOCK AUDIO)
       </button>
       <p id="lobby-status" class="hint-text">Turn ringer/media volume UP before match start.</p>
 
-      <!-- Host Start Button -->
       <button id="start-game-btn" class="btn-primary hidden">START MATCH</button>
       <button id="leave-room-btn" class="btn-ghost">LEAVE LOBBY</button>
+    </div>
+  </main>
+
+  <!-- SCREEN 3: ACTIVE GAME HUD -->
+  <div id="screen-game" class="game-hud hidden">
+    <!-- Top Tactical Bar -->
+    <div class="hud-top">
+      <div class="hud-box">
+        <span class="hud-label">YOUR ROLE</span>
+        <span id="hud-role" class="hud-value">---</span>
+      </div>
+      <div class="hud-box center">
+        <span id="hud-phase-label" class="hud-label">TIME LEFT</span>
+        <span id="hud-timer" class="hud-timer">00:00</span>
+      </div>
+      <div class="hud-box right">
+        <span class="hud-label">CAPTURED</span>
+        <span id="hud-score" class="hud-value">0 / 1</span>
+      </div>
+    </div>
+
+    <!-- Finder Head-Start Lockout Overlay -->
+    <div id="finder-wait-overlay" class="lockout-overlay hidden">
+      <div class="lockout-card">
+        <p class="eyebrow">HEAD-START ACTIVE</p>
+        <h2>HOLD POSITION</h2>
+        <div id="lockout-countdown" class="big-counter">40</div>
+        <p class="hint-text">Hiders are scattering. Do not move until the timer hits zero.</p>
+      </div>
+    </div>
+
+    <!-- Caught Hider Overlay -->
+    <div id="caught-overlay" class="lockout-overlay hidden">
+      <div class="lockout-card">
+        <p class="eyebrow">SIGNAL INTERCEPTED</p>
+        <h2>YOU WERE CAUGHT</h2>
+        <p class="hint-text">Stay put or walk back to the start point while the round finishes.</p>
+      </div>
+    </div>
+
+    <!-- Bottom Proximity & Status Bar -->
+    <div class="hud-bottom">
+      <div id="capture-panel" class="capture-panel hidden">
+        <div class="capture-header">
+          <span id="capture-target-name">LOCKING TARGET...</span>
+          <span id="capture-timer-text">0.0 / 10s</span>
+        </div>
+        <div class="progress-track">
+          <div id="capture-bar-fill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="hud-footer-row">
+        <span id="hud-substatus" class="hud-subtext">GPS TRACKING ACTIVE</span>
+        <button id="recenter-btn" class="btn-small">CENTER MAP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: MATCH OVER SUMMARY -->
+  <main id="screen-gameover" class="panel-overlay hidden">
+    <div class="card">
+      <p class="eyebrow">MATCH COMPLETE</p>
+      <h2 id="winner-title">FINDERS WIN</h2>
+      <p id="winner-reason" class="hint-text">Target number of hiders captured.</p>
+
+      <section class="section-block">
+        <div class="section-head"><span>FINAL ROSTER</span></div>
+        <ul id="final-roster-list" class="player-list"></ul>
+      </section>
+
+      <button id="back-to-lobby-btn" class="btn-primary">RETURN TO LOBBY</button>
     </div>
   </main>
 
