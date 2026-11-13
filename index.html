@@ -4,12 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BLIP — Real-World Hide & Seek</title>
+
+  <!-- Blip Radar Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='48' fill='%230a0a0a'/%3E%3Ccircle cx='120' cy='120' r='90' fill='none' stroke='%23ffffff' stroke-width='8'/%3E%3Ccircle cx='120' cy='120' r='45' fill='none' stroke='%23888888' stroke-width='4'/%3E%3Cpath d='M120 120 L165 42 A90 90 0 0 1 208.6 104.4 Z' fill='%23ffffff' opacity='0.28'/%3E%3Cline x1='120' y1='120' x2='165' y2='42' stroke='%23ffffff' stroke-width='8' stroke-linecap='round'/%3E%3Ccircle cx='172' cy='83' r='15' fill='none' stroke='%23ffffff' stroke-width='5'/%3E%3Ccircle cx='172' cy='83' r='7' fill='%23ffffff'/%3E%3Ccircle cx='120' cy='120' r='7' fill='%23ffffff'/%3E%3C/svg%3E" />
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <div>
+    <div class="brand-lockup">
+      <!-- Blip Radar Mark SVG -->
+      <svg class="brand-mark" role="img" aria-label="Blip radar mark" viewBox="0 0 240 240" width="26" height="26">
+        <circle cx="120" cy="120" r="90" fill="none" stroke="#ffffff" stroke-width="8"></circle>
+        <circle cx="120" cy="120" r="45" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.4"></circle>
+        <path d="M120 120 L165 42 A90 90 0 0 1 208.6 104.4 Z" fill="#ffffff" opacity="0.25"></path>
+        <line x1="120" y1="120" x2="165" y2="42" stroke="#ffffff" stroke-width="8" stroke-linecap="round"></line>
+        <circle cx="172" cy="83" r="15" fill="none" stroke="#ffffff" stroke-width="5"></circle>
+        <circle cx="172" cy="83" r="7" fill="#ffffff"></circle>
+        <circle cx="120" cy="120" r="7" fill="#ffffff"></circle>
+      </svg>
       <h1>BLIP <span class="badge">v0.6</span></h1>
     </div>
     <p id="status-text">CONNECTING...</p>
@@ -21,8 +35,21 @@
   <!-- SCREEN 1: HOME (IDENTITY -> JOIN OR HOST) -->
   <main id="screen-home" class="panel-overlay">
     <div class="card">
-      <p class="eyebrow">REAL-WORLD RADAR TAG</p>
-      <h2>ENTER THE FIELD</h2>
+      <div class="home-brand-hero">
+        <svg class="hero-mark" role="img" aria-label="Blip logo" viewBox="0 0 240 240" width="52" height="52">
+          <circle cx="120" cy="120" r="90" fill="none" stroke="#ffffff" stroke-width="6"></circle>
+          <circle cx="120" cy="120" r="45" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.4"></circle>
+          <path d="M120 120 L165 42 A90 90 0 0 1 208.6 104.4 Z" fill="#ffffff" opacity="0.22"></path>
+          <line x1="120" y1="120" x2="165" y2="42" stroke="#ffffff" stroke-width="6" stroke-linecap="round"></line>
+          <circle cx="172" cy="83" r="15" fill="none" stroke="#ffffff" stroke-width="4"></circle>
+          <circle cx="172" cy="83" r="7" fill="#ffffff"></circle>
+          <circle cx="120" cy="120" r="6" fill="#ffffff"></circle>
+        </svg>
+        <div>
+          <p class="eyebrow">REAL-WORLD RADAR TAG</p>
+          <h2 class="hero-title">ENTER THE FIELD</h2>
+        </div>
+      </div>
 
       <div class="identity-box">
         <label class="field-label" for="player-name">YOUR CALLSIGN (REQUIRED FOR ALL PLAYERS)</label>
@@ -159,7 +186,7 @@
           <span id="hud-timer" class="hud-timer">00:00</span>
         </div>
         <div class="hud-box right">
-          <span class="hud-label">CAPTURED</span>
+          <span id="hud-label">CAPTURED</span>
           <span id="hud-score" class="hud-value">0 / 1</span>
         </div>
       </div>
@@ -204,7 +231,7 @@
       </div>
     </div>
 
-    <!-- Bottom Proximity & Countdown Bar (Shows 10s -> 0s on both Finder & Hider) -->
+    <!-- Bottom Proximity & Countdown Bar -->
     <div class="hud-bottom">
       <div id="capture-panel" class="capture-panel hidden">
         <div class="capture-header">
