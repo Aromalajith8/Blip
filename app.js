@@ -1,4 +1,4 @@
-\// 1. Firebase Configuration
+// 1. Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyABECV3VWFtqH9zzpsJIPBWWV4EvBHuDyQ",
   authDomain: "blip-game-7a142.firebaseapp.com",
