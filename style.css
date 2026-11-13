@@ -524,3 +524,20 @@ button:active {
   letter-spacing: 1px;
   color: #888888;
 }
+/* Home Screen Visual Separation */
+.identity-box {
+  background: #111111;
+  border: 1px solid #242424;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.identity-box input {
+  margin-bottom: 0;
+  background: #0a0a0a;
+}
+
+.action-section {
+  margin-bottom: 4px;
+}
