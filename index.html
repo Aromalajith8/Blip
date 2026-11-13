@@ -4,31 +4,124 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BLIP — Real-World Hide & Seek</title>
-  
-  <!-- Leaflet Map CSS (Free OpenStreetMap) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>BLIP <span class="badge">v0.1</span></h1>
-    <p id="status-text">Waiting for GPS & Database...</p>
+    <div>
+      <h1>BLIP <span class="badge">v0.2</span></h1>
+    </div>
+    <p id="status-text">CONNECTING...</p>
   </header>
 
-  <!-- Live Map Container -->
+  <!-- Background Radar Map -->
   <div id="map"></div>
 
-  <footer>
-    <button id="locate-btn">Enable GPS & Ping Me</button>
-  </footer>
+  <!-- SCREEN 1: HOME (CREATE OR JOIN) -->
+  <main id="screen-home" class="panel-overlay">
+    <div class="card">
+      <p class="eyebrow">REAL-WORLD RADAR TAG</p>
+      <h2>ENTER THE FIELD</h2>
 
-  <!-- Leaflet Map JS -->
+      <label class="field-label" for="player-name">CALLSIGN / NAME</label>
+      <input type="text" id="player-name" maxlength="16" placeholder="e.g. ARO" autocomplete="off" />
+
+      <button id="create-room-btn" class="btn-primary">CREATE MATCH (HOST)</button>
+
+      <div class="divider"><span>OR JOIN EXISTING</span></div>
+
+      <div class="join-row">
+        <input type="tel" id="room-code-input" maxlength="4" placeholder="4-DIGIT CODE" autocomplete="off" />
+        <button id="join-room-btn" class="btn-secondary">JOIN</button>
+      </div>
+      <p id="home-error" class="error-msg"></p>
+    </div>
+  </main>
+
+  <!-- SCREEN 2: MULTIPLAYER LOBBY -->
+  <main id="screen-lobby" class="panel-overlay hidden">
+    <div class="card lobby-card">
+      <div class="room-header">
+        <div>
+          <p class="eyebrow">ROOM CODE</p>
+          <div class="code-display" id="lobby-room-code">----</div>
+        </div>
+        <button id="copy-code-btn" class="btn-small">COPY</button>
+      </div>
+
+      <!-- Joined Players List -->
+      <section class="section-block">
+        <div class="section-head">
+          <span>PLAYERS IN LOBBY</span>
+          <span id="player-count">0</span>
+        </div>
+        <ul id="player-list" class="player-list"></ul>
+      </section>
+
+      <!-- Host Rules Panel -->
+      <section class="section-block">
+        <div class="section-head">
+          <span>MATCH PARAMETERS</span>
+          <span id="role-badge" class="tag">GUEST</span>
+        </div>
+
+        <div class="settings-grid">
+          <div class="setting-item">
+            <label for="set-finders">FINDERS</label>
+            <select id="set-finders" class="host-control">
+              <option value="1">1 Finder</option>
+              <option value="2">2 Finders</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label for="set-headstart">HIDE TIME (SEC)</label>
+            <input type="number" id="set-headstart" class="host-control" min="10" max="300" value="40" />
+          </div>
+
+          <div class="setting-item">
+            <label for="set-duration">GAME TIME (MIN)</label>
+            <input type="number" id="set-duration" class="host-control" min="2" max="60" value="10" />
+          </div>
+
+          <div class="setting-item">
+            <label for="set-radius">CATCH DIST (M)</label>
+            <input type="number" id="set-radius" class="host-control" min="10" max="100" value="12" />
+          </div>
+
+          <div class="setting-item">
+            <label for="set-hold">CATCH HOLD (SEC)</label>
+            <input type="number" id="set-hold" class="host-control" min="3" max="30" value="10" />
+          </div>
+
+          <div class="setting-item">
+            <label for="set-alarm">BLIP EVERY (MIN)</label>
+            <input type="number" id="set-alarm" class="host-control" min="1" max="15" value="2" />
+          </div>
+
+          <div class="setting-item full-width">
+            <label for="set-target">HIDERS NEEDED TO WIN</label>
+            <input type="number" id="set-target" class="host-control" min="1" max="30" value="1" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Audio & GPS Readiness -->
+      <button id="test-audio-btn" class="btn-secondary">
+        TEST 2S BLIP ALARM (UNLOCK AUDIO)
+      </button>
+      <p id="lobby-status" class="hint-text">Turn ringer/media volume UP before match start.</p>
+
+      <!-- Host Start Button -->
+      <button id="start-game-btn" class="btn-primary hidden">START MATCH</button>
+      <button id="leave-room-btn" class="btn-ghost">LEAVE LOBBY</button>
+    </div>
+  </main>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <!-- Firebase App & Realtime Database SDKs (Compat version for easy plain JS) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  
   <script src="app.js"></script>
 </body>
 </html>
