@@ -69,3 +69,6 @@ button {
 button:active {
   opacity: 0.85;
 }
+.leaflet-layer {
+  filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(95%);
+}
