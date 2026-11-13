@@ -1,4 +1,4 @@
-// 1. Firebase Configuration
+\// 1. Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyABECV3VWFtqH9zzpsJIPBWWV4EvBHuDyQ",
   authDomain: "blip-game-7a142.firebaseapp.com",
@@ -27,7 +27,7 @@ let myMarker = null;
 let myAccuracyRing = null;
 let myRadiusCircle = null;
 let playZoneCircle = null;
-let otherMarkers = {}; // { playerId: { layer, isBlinking } }
+let otherMarkers = {};
 let autoZoomEnabled = true;
 let hasInitialMapFit = false;
 
@@ -201,6 +201,7 @@ function playCaptureBroadcastChime() {
     navigator.vibrate([180, 90, 250]);
   }
 }
+
 // 8. Create Room (Host)
 document.getElementById("create-room-btn").addEventListener("click", async () => {
   const name = playerNameInput.value.trim().toUpperCase();
@@ -208,16 +209,13 @@ document.getElementById("create-room-btn").addEventListener("click", async () =>
     homeError.textContent = "ENTER YOUR CALLSIGN FIRST.";
     return;
   }
-
   if (statusText.textContent !== "ONLINE") {
-    homeError.textContent = "SERVER NOT CONNECTED YET — CHECK INTERNET OR WAIT 3S.";
+    homeError.textContent = "CONNECTING TO SERVER — WAIT 2 SECONDS & TRY AGAIN.";
     return;
   }
 
   homeError.textContent = "CREATING ROOM...";
-  try {
-    unlockAndPlayTwoSecondAlarm();
-  } catch (_) {}
+  try { unlockAndPlayTwoSecondAlarm(); } catch (_) {}
 
   const code = Math.floor(1000 + Math.random() * 9000).toString();
   isHost = true;
@@ -254,9 +252,10 @@ document.getElementById("create-room-btn").addEventListener("click", async () =>
     roomRef.child(`players/${myPlayerId}`).onDisconnect().remove();
     enterLobby(code);
   } catch (err) {
-    homeError.textContent = "DB ERROR: " + err.message.toUpperCase();
+    homeError.textContent = "ERROR: " + err.message.toUpperCase();
   }
 });
+
 // 9. Join Room
 document.getElementById("join-room-btn").addEventListener("click", async () => {
   const name = playerNameInput.value.trim().toUpperCase();
@@ -270,9 +269,13 @@ document.getElementById("join-room-btn").addEventListener("click", async () => {
     homeError.textContent = "ENTER A VALID 4-DIGIT CODE.";
     return;
   }
+  if (statusText.textContent !== "ONLINE") {
+    homeError.textContent = "CONNECTING TO SERVER — WAIT 2 SECONDS & TRY AGAIN.";
+    return;
+  }
 
   homeError.textContent = "JOINING...";
-  unlockAndPlayTwoSecondAlarm();
+  try { unlockAndPlayTwoSecondAlarm(); } catch (_) {}
 
   const targetRef = db.ref(`rooms/${code}`);
   const snap = await targetRef.once("value");
@@ -389,12 +392,12 @@ Object.entries(settingInputs).forEach(([key, inputEl]) => {
   });
 });
 
-// Add Simulated Test Bot (~10m away so you can test close blink + 10s->0s capture right away)
+// Add Simulated Test Bot (~6m away, well inside default 12m catch radius)
 addBotBtn.addEventListener("click", async () => {
   if (!isHost || !roomRef) return;
   const botId = "bot_" + Math.floor(100 + Math.random() * 900);
-  const offsetLat = (Math.random() - 0.5) * 0.00016;
-  const offsetLng = (Math.random() - 0.5) * 0.00016;
+  const offsetLat = (Math.random() - 0.5) * 0.00008;
+  const offsetLng = (Math.random() - 0.5) * 0.00008;
   const baseLat = (myLastCoords ? myLastCoords.lat : 11.2588) + offsetLat;
   const baseLng = (myLastCoords ? myLastCoords.lng : 75.7804) + offsetLng;
 
@@ -449,15 +452,9 @@ startGameBtn.addEventListener("click", async () => {
     return;
   }
 
-  let zoneCenter = myLastCoords ? { lat: myLastCoords.lat, lng: myLastCoords.lng } : null;
-  if (!zoneCenter) {
-    for (const pid of playerIds) {
-      if (typeof players[pid].lat === "number" && typeof players[pid].lng === "number") {
-        zoneCenter = { lat: players[pid].lat, lng: players[pid].lng };
-        break;
-      }
-    }
-  }
+  let zoneCenter = myLastCoords
+    ? { lat: myLastCoords.lat, lng: myLastCoords.lng }
+    : { lat: 11.2588, lng: 75.7804 };
 
   const shuffled = [...playerIds];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -548,8 +545,6 @@ function startGpsStreaming() {
       myLastCoords = { lat, lng, accuracy };
 
       statusText.textContent = `GPS ±${accuracy}M`;
-      hudSubstatus.textContent = `YOU · GPS ±${accuracy}M`;
-
       updateMyMapMarker(lat, lng, accuracy);
 
       if (roomRef) {
@@ -678,7 +673,6 @@ function fitMapToPlayingArea(room, force = false) {
   }
 }
 
-// Show Global Capture Broadcast Notification to Every Player
 function showGlobalCaptureBanner(text) {
   eventBannerText.textContent = text;
   eventBanner.classList.remove("hidden");
@@ -705,7 +699,6 @@ function updateInGameState(room) {
   const target = Number(room.settings?.targetCaptures || 1);
   hudScore.textContent = `${caughtCount} / ${target}`;
 
-  // Trigger global broadcast toast when a new capture event occurs
   if (room.lastEvent && room.lastEvent.id && room.lastEvent.id !== lastSeenEventId) {
     lastSeenEventId = room.lastEvent.id;
     showGlobalCaptureBanner(room.lastEvent.text);
@@ -726,7 +719,6 @@ function clearOtherMarkers() {
   otherMarkers = {};
 }
 
-// Renders Other Players on Map (Static Pins + Continuous Blinking Close-Range Beacons)
 function syncRadarMarkers(room, shouldRevealHidersOnMap, closePlayerIds) {
   const players = room.players || {};
   const me = players[myPlayerId];
@@ -758,7 +750,6 @@ function syncRadarMarkers(room, shouldRevealHidersOnMap, closePlayerIds) {
         }
       }
     } else if (me.role === "hider" && me.status === "active") {
-      // Hider sees Finder blinking continuously when Finder is really close
       if (p.role === "finder" && isClose) {
         shouldShow = true;
         shouldBlink = true;
@@ -770,7 +761,6 @@ function syncRadarMarkers(room, shouldRevealHidersOnMap, closePlayerIds) {
       visibleIds.add(pid);
       const existing = otherMarkers[pid];
 
-      // Recreate layer if switching between solid dot and blinking beacon
       if (!existing || existing.isBlinking !== shouldBlink) {
         if (existing) map.removeLayer(existing.layer);
 
@@ -831,8 +821,10 @@ function runMatchTick() {
 
   const catchRadius = Number(settings.captureRadiusMeters || 12);
   const holdRequired = Number(settings.captureHoldSec || 10);
-  // Close-range radar blink activates at 1.5x catch distance (e.g., 18m for a 12m catch radius)
   const closeBlinkRadius = Math.max(catchRadius * 1.5, 18);
+
+  // Use live GPS if available, or zoneCenter fallback on desktop without GPS
+  const activeMyCoords = myLastCoords || room.zoneCenter;
 
   // Check Play Zone Boundary for Active Hiders
   const zoneRadius = Number(settings.zoneRadiusMeters || 0);
@@ -952,77 +944,92 @@ function runMatchTick() {
 
   const closePlayerIds = new Set();
 
-  // CASE 1: FINDER PROXIMITY BLINK + 10s -> 0s CAPTURE COUNTDOWN
-  if (me.role === "finder" && myLastCoords) {
-    let closestHider = null;
-    let closestDist = Infinity;
+  // CASE 1: FINDER PROXIMITY BLINK + LIVE DISTANCE + 10s -> 0s CAPTURE COUNTDOWN
+  if (me.role === "finder") {
+    if (!activeMyCoords) {
+      hudSubstatus.textContent = "WAITING FOR YOUR GPS LOCK...";
+    } else {
+      let lockingHider = null;
+      let lockingDist = Infinity;
+      let nearestAnyHider = null;
+      let nearestAnyDist = Infinity;
 
-    activeHiders.forEach(([hid, hider]) => {
-      if (typeof hider.lat === "number" && typeof hider.lng === "number") {
-        const d = getDistanceMeters(myLastCoords.lat, myLastCoords.lng, hider.lat, hider.lng);
+      activeHiders.forEach(([hid, hider]) => {
+        if (typeof hider.lat === "number" && typeof hider.lng === "number") {
+          const d = getDistanceMeters(activeMyCoords.lat, activeMyCoords.lng, hider.lat, hider.lng);
 
-        // Continuous blink on Finder map when within closeBlinkRadius
-        if (d <= closeBlinkRadius) {
-          closePlayerIds.add(hid);
-        }
-
-        // Capture countdown (10s -> 0s) when within catchRadius
-        if (d <= catchRadius) {
-          captureHoldTracker[hid] = (captureHoldTracker[hid] || 0) + 0.5;
-          if (d < closestDist) {
-            closestDist = d;
-            closestHider = { id: hid, name: hider.name, dist: Math.round(d), held: captureHoldTracker[hid] };
+          if (d < nearestAnyDist) {
+            nearestAnyDist = d;
+            nearestAnyHider = { name: hider.name, dist: Math.round(d) };
           }
 
-          if (captureHoldTracker[hid] >= holdRequired) {
-            captureHoldTracker[hid] = 0;
-            const broadcastMsg = `${hider.name} WAS CAPTURED BY ${me.name}`;
-            roomRef.update({
-              [`players/${hid}/status`]: "caught",
-              [`players/${hid}/caughtBy`]: me.name,
-              lastEvent: {
-                id: `${hid}_${Date.now()}`,
-                text: broadcastMsg,
-                ts: getServerNow()
-              }
-            });
+          if (d <= closeBlinkRadius) {
+            closePlayerIds.add(hid);
           }
-        } else {
-          captureHoldTracker[hid] = 0;
+
+          if (d <= catchRadius) {
+            captureHoldTracker[hid] = (captureHoldTracker[hid] || 0) + 0.5;
+            if (d < lockingDist) {
+              lockingDist = d;
+              lockingHider = { id: hid, name: hider.name, dist: Math.round(d), held: captureHoldTracker[hid] };
+            }
+
+            if (captureHoldTracker[hid] >= holdRequired) {
+              captureHoldTracker[hid] = 0;
+              const broadcastMsg = `${hider.name} WAS CAPTURED BY ${me.name}`;
+              roomRef.update({
+                [`players/${hid}/status`]: "caught",
+                [`players/${hid}/caughtBy`]: me.name,
+                lastEvent: {
+                  id: `${hid}_${Date.now()}`,
+                  text: broadcastMsg,
+                  ts: getServerNow()
+                }
+              });
+            }
+          } else {
+            // Gentle decay so a 1-second indoor GPS wobble doesn't wipe out progress
+            captureHoldTracker[hid] = Math.max(0, (captureHoldTracker[hid] || 0) - 0.5);
+          }
         }
+      });
+
+      if (nearestAnyHider) {
+        hudSubstatus.textContent = `NEAREST: ${nearestAnyHider.name} (${nearestAnyHider.dist}M / ${catchRadius}M)`;
+      } else {
+        hudSubstatus.textContent = "WAITING FOR HIDER GPS SIGNAL...";
       }
-    });
 
-    if (closePlayerIds.size > 0) {
-      proximityBanner.classList.remove("hidden");
-      proximityBannerText.textContent = `TARGET IN CLOSE RANGE (${closePlayerIds.size}) — RADAR BLINKING`;
-    } else {
-      proximityBanner.classList.add("hidden");
-    }
+      if (closePlayerIds.size > 0) {
+        proximityBanner.classList.remove("hidden");
+        proximityBannerText.textContent = `TARGET IN CLOSE RANGE (${closePlayerIds.size}) — RADAR BLINKING`;
+      } else {
+        proximityBanner.classList.add("hidden");
+      }
 
-    if (closestHider) {
-      const countdownLeft = Math.max(0, holdRequired - closestHider.held);
-      const pctRemaining = (countdownLeft / holdRequired) * 100;
-      capturePanel.classList.remove("hidden");
-      captureTargetName.textContent = `CAPTURING ${closestHider.name} (${closestHider.dist}M)`;
-      captureTimerText.textContent = `${countdownLeft.toFixed(1)}S`;
-      captureBarFill.style.width = `${pctRemaining}%`;
-    } else {
-      capturePanel.classList.add("hidden");
-      captureBarFill.style.width = "100%";
+      if (lockingHider) {
+        const countdownLeft = Math.max(0, holdRequired - lockingHider.held);
+        const pctRemaining = (countdownLeft / holdRequired) * 100;
+        capturePanel.classList.remove("hidden");
+        captureTargetName.textContent = `CAPTURING ${lockingHider.name} (${lockingHider.dist}M)`;
+        captureTimerText.textContent = `${countdownLeft.toFixed(1)}S`;
+        captureBarFill.style.width = `${pctRemaining}%`;
+      } else {
+        capturePanel.classList.add("hidden");
+        captureBarFill.style.width = "100%";
+      }
     }
   }
 
   // CASE 2: HIDER PROXIMITY BLINK + 10s -> 0s DANGER COUNTDOWN
-  if (me.role === "hider" && me.status === "active" && myLastCoords) {
+  if (me.role === "hider" && me.status === "active" && activeMyCoords) {
     let closestFinder = null;
     let closestFinderDist = Infinity;
 
     activeFinders.forEach(([fid, finder]) => {
       if (typeof finder.lat === "number" && typeof finder.lng === "number") {
-        const d = getDistanceMeters(myLastCoords.lat, myLastCoords.lng, finder.lat, finder.lng);
+        const d = getDistanceMeters(activeMyCoords.lat, activeMyCoords.lng, finder.lat, finder.lng);
 
-        // Continuous blink on Hider map when Finder is close
         if (d <= closeBlinkRadius) {
           closePlayerIds.add(fid);
         }
@@ -1034,10 +1041,14 @@ function runMatchTick() {
             closestFinder = { name: finder.name, dist: Math.round(d), held: hiderEscapeTracker[fid] };
           }
         } else {
-          hiderEscapeTracker[fid] = 0;
+          hiderEscapeTracker[fid] = Math.max(0, (hiderEscapeTracker[fid] || 0) - 0.5);
         }
       }
     });
+
+    if (myLastCoords) {
+      hudSubstatus.textContent = `STEALTH ACTIVE · GPS ±${myLastCoords.accuracy}M`;
+    }
 
     if (closePlayerIds.size > 0) {
       proximityBanner.classList.remove("hidden");
