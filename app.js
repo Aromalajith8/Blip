@@ -16,10 +16,10 @@ const db = firebase.database();
 const statusText = document.getElementById("status-text");
 const locateBtn = document.getElementById("locate-btn");
 
-// 3. Initialize Leaflet Map
+// 3. Initialize Leaflet Map with Key-Free OpenStreetMap Tiles
 const map = L.map("map").setView([20.5937, 78.9629], 5);
 
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
   maxZoom: 19
 }).addTo(map);
