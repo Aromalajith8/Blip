@@ -334,7 +334,6 @@ function enterLobby(code) {
     const players = room.players || {};
     const playerIds = Object.keys(players);
 
-    // Remember assigned role locally in case of brief network drop
     if (players[myPlayerId]?.role) {
       myAssignedRole = players[myPlayerId].role;
     }
@@ -946,24 +945,20 @@ function runMatchTick() {
 
   // Check Win Conditions
   if (remainingMatch <= 0) {
-    if (isHost) {
-      roomRef.update({
-        status: "ended",
-        winner: "HIDERS WIN",
-        winReason: "Time expired before finders reached target captures."
-      });
-    }
+    roomRef.update({
+      status: "ended",
+      winner: "HIDERS WIN",
+      winReason: "Time expired before finders reached target captures."
+    });
     return;
   }
 
   if (caughtHiders.length >= targetCaptures || activeHiders.length === 0) {
-    if (isHost) {
-      roomRef.update({
-        status: "ended",
-        winner: "FINDERS WIN",
-        winReason: `Captured ${caughtHiders.length} of ${targetCaptures} required hiders.`
-      });
-    }
+    roomRef.update({
+      status: "ended",
+      winner: "FINDERS WIN",
+      winReason: `Captured ${caughtHiders.length} of ${targetCaptures} required hiders.`
+    });
     return;
   }
 
@@ -1003,7 +998,11 @@ function runMatchTick() {
             if (captureHoldTracker[hid] >= holdRequired) {
               captureHoldTracker[hid] = 0;
               const broadcastMsg = `${hiderName} WAS CAPTURED BY ${myResolvedName}`;
-              roomRef.update({
+              const newCaughtTotal = caughtHiders.length + 1;
+              const remainingActiveAfterCatch = activeHiders.length - 1;
+              const isMatchWon = newCaughtTotal >= targetCaptures || remainingActiveAfterCatch <= 0;
+
+              const updates = {
                 [`players/${hid}/status`]: "caught",
                 [`players/${hid}/caughtBy`]: myResolvedName,
                 lastEvent: {
@@ -1011,7 +1010,15 @@ function runMatchTick() {
                   text: broadcastMsg,
                   ts: getServerNow()
                 }
-              }).catch((err) => console.error("Capture update failed:", err));
+              };
+
+              if (isMatchWon) {
+                updates.status = "ended";
+                updates.winner = "FINDERS WIN";
+                updates.winReason = `Captured ${newCaughtTotal} of ${targetCaptures} required hiders.`;
+              }
+
+              roomRef.update(updates).catch((err) => console.error("Capture update failed:", err));
             }
           } else {
             captureHoldTracker[hid] = Math.max(0, (captureHoldTracker[hid] || 0) - 0.5);
