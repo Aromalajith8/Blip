@@ -1,6 +1,6 @@
 # BLIP — Real-World Radar Hide & Seek
 
-<img width="1760" height="1120" alt="Blip@2x" src="https://github.com/user-attachments/assets/0c790f1f-a171-463f-a6bc-ef2d3052b720" />
+<img width="880" height="560" alt="Blip@2x" src="https://github.com/user-attachments/assets/0c790f1f-a171-463f-a6bc-ef2d3052b720" />
 
 
 # BLIP — Real-World Radar Hide & Seek
